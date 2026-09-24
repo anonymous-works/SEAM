@@ -1,0 +1,53 @@
+_base_: seam_base.yaml
+
+experiment:
+  name: seam_booksum
+  output_dir: runs/seam/booksum_full_memory_source_copy
+
+data:
+  train_file: datasets/booksum/train.jsonl
+  validation_file: datasets/booksum/validation.jsonl
+  test_file: datasets/booksum/test.jsonl
+  source_field: text
+  target_field: summary
+  id_field: id
+  encoder_prefix: "Summarize the following literary narrative into a coherent, faithful summary. Preserve\
+  \ the main characters, key events, causal and temporal relationships, and important\
+  \ outcomes; do not add information.\nNarrative:\n"
+  decoder_prompt: "Summarize the following literary narrative into a coherent, faithful summary. Preserve the main characters, key events, causal and temporal relationships, and important outcomes; do not add information."
+  decoder_prefix: ""
+  detokenize: true
+  max_source_length: 16384
+  max_target_length: 1024
+
+generation:
+  batch_size: 8
+  max_new_tokens: 1024
+  min_new_tokens: 32
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+  num_beams: 1
+  do_sample: false
+  temperature: 0.0
+  top_k: 0
+  top_p: 1.0
+
+model:
+  encoder_name: /absolute/path/to/pplx-embed-v1-0.6b
+  decoder_name: /absolute/path/to/Qwen3-0.6B
+
+training:
+  interface_warmup_epochs: 1
+  full_finetune_epochs: 4
+  batch_size: 8
+  gradient_accumulation_steps: 12
+  validation_batch_size: 4
+  num_workers: 8
+  validation_num_workers: 2
+  length_bucketing: true
+  length_bucket_multiplier: 50
+  persistent_workers: true
+  fused_optimizer: true
+  tf32: true
+  max_grad_norm: 1.0
+  save_best: false

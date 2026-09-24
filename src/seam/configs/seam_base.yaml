@@ -1,0 +1,104 @@
+experiment:
+  name: seam
+  output_dir: runs/seam
+
+model:
+  encoder_name: Qwen/Qwen3-Embedding-0.6B
+  decoder_name: Qwen/Qwen3-0.6B
+  dtype: float32
+  compute_dtype: bfloat16
+  tokenizer_use_fast: true
+  gradient_checkpointing: true
+  attention_implementation: sdpa
+  trust_remote_code: true
+
+encoder:
+  backend: pretrained_native
+
+architecture:
+  name: seam_full_memory
+  controller_dim: 256
+  depth_taps: 4
+  depth_rank: 128
+  depth_gate_init: 0.02
+  depth_gate_max: 0.15
+  feature_rank: 256
+  feature_gate_init: 0.02
+  feature_gate_max: 0.20
+  focus_hidden: 256
+  focus_windows: [32, 128, 512]
+  focus_overlap: 0.5
+  focus_strength_init: 0.10
+  focus_strength_max: 1.0
+  temperature_init: 1.0
+  temperature_min: 0.5
+  temperature_max: 2.0
+
+decoder:
+  cross_attention_every: 1
+  initialize_cross_from_self: true
+  cross_gate_init: 0.10
+  cross_gate_max: 1.0
+  attention_dropout: 0.0
+  ce_chunk_size: 1024
+  source_copy:
+    enabled: true
+    key_dim: 128
+    gate_init: 0.05
+
+training:
+  interface_warmup_epochs: 1
+  full_finetune_epochs: 4
+  batch_size: 4
+  gradient_accumulation_steps: 8
+  validation_batch_size: 4
+  num_workers: 8
+  persistent_workers: true
+  length_bucketing: true
+  length_bucket_multiplier: 50
+  fused_optimizer: true
+  tf32: true
+  validation_num_workers: 1
+  warmup_bridge_lr: 1.0e-4
+  warmup_cross_attention_lr: 1.0e-4
+  full_encoder_lr: 3.0e-5
+  full_decoder_lr: 3.0e-5
+  full_bridge_lr: 5.0e-5
+  full_cross_attention_lr: 5.0e-5
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  seed: 42
+  log_every_steps: 10
+  save_each_epoch: true
+  save_best: false
+  resume_checkpoint: ""
+  resume_scheduler: true
+
+data:
+  train_file: datasets/pubmed/train.jsonl
+  validation_file: datasets/pubmed/validation.jsonl
+  test_file: datasets/pubmed/test.jsonl
+  source_field: text
+  target_field: summary
+  id_field: id
+  list_separator: "\n"
+  encoder_prefix: "Summarize the following document faithfully and concisely.\nDocument:\n"
+  decoder_prompt: "Summarize the encoded source concisely and faithfully. Preserve the essential facts and relationships. Do not add unsupported information. Output only the summary."
+  decoder_chat_template: true
+  decoder_prefix: "Summary:\n"
+  detokenize: false
+  max_source_length: 4096
+  max_target_length: 512
+
+generation:
+  compact_finished: true
+  batch_size: 96
+  max_new_tokens: 512
+  min_new_tokens: 16
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+  num_beams: 1
+  do_sample: false
+  temperature: 0.0
+  top_k: 0
+  top_p: 1.0

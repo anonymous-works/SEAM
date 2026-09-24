@@ -1,0 +1,51 @@
+_base_: seam_base.yaml
+
+experiment:
+  name: seam_arxiv
+  output_dir: runs/seam/arxiv_full_memory_source_copy
+
+data:
+  train_file: datasets/arxiv/train.jsonl
+  validation_file: datasets/arxiv/validation.jsonl
+  test_file: datasets/arxiv/test.jsonl
+  source_field: text
+  target_field: summary
+  id_field: id
+  encoder_prefix: "Summarize the following scientific research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+  decoder_prompt: "Summarize the encoded scientific article as a concise, factual abstract. Cover the objective, methods, key results, and conclusion when supported. Preserve numbers and the direction of findings. Output only the abstract."
+  decoder_prefix: "Abstract:\n"
+  detokenize: true
+  max_source_length: 8192
+  max_target_length: 512
+
+generation:
+  batch_size: 8
+  max_new_tokens: 512
+  min_new_tokens: 32
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+  num_beams: 1
+  do_sample: false
+  temperature: 0.0
+  top_k: 0
+  top_p: 1.0
+
+model:
+  encoder_name: /absolute/path/to/pplx-embed-v1-0.6b
+  decoder_name: /absolute/path/to/Qwen3-0.6B
+
+training:
+  interface_warmup_epochs: 1
+  full_finetune_epochs: 4
+  batch_size: 8
+  gradient_accumulation_steps: 12
+  validation_batch_size: 4
+  num_workers: 8
+  validation_num_workers: 2
+  length_bucketing: true
+  length_bucket_multiplier: 50
+  persistent_workers: true
+  fused_optimizer: true
+  tf32: true
+  max_grad_norm: 1.0
+  save_best: false

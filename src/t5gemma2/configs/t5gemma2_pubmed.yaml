@@ -1,0 +1,82 @@
+project:
+  name: t5gemma2_1b_1b_pubmed_full_finetune_4096
+  task: summarization
+  output_dir: runs/t5gemma2_1b_1b_full_pubmed_4096
+
+huggingface:
+  enabled: false
+  repo_id: null
+  repo_type: model
+  path_in_repo: null
+  push_final: false
+  push_eval_outputs: false
+  fail_on_error: false
+  private: false
+
+model:
+  model_name_or_path: google/t5gemma-2-1b-1b
+  trust_remote_code: true
+  torch_dtype: float32
+  eval_torch_dtype: bfloat16
+  use_cache_for_eval: true
+
+training:
+  mode: full_finetune
+  num_train_epochs: 4
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 1.0e-5
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler_type: cosine
+  optim: adamw_torch_fused
+  bf16: true
+  fp16: false
+  require_fp32_master_weights: true
+  tf32: true
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  group_by_length: true
+  dataloader_num_workers: 4
+  logging_steps: 10
+  eval_strategy: "no"
+  seed: 42
+  ddp_find_unused_parameters: true
+  ddp_backend: nccl
+
+data:
+  train_file: src/seam/datasets/pubmed/train.jsonl
+  eval_file: src/seam/datasets/pubmed/validation.jsonl
+  validation_file: src/seam/datasets/pubmed/validation.jsonl
+  test_file: src/seam/datasets/pubmed/test.jsonl
+  source_field: text
+  target_field: summary
+  id_field: id
+  list_separator: "\n"
+  detokenize: true
+  source_prefix: "Summarize the following biomedical research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+  max_source_length: 4096
+  max_target_length: 512
+
+generation:
+  max_new_tokens: 512
+  min_new_tokens: 32
+  num_beams: 1
+  do_sample: false
+  early_stopping: true
+  temperature: 0.0
+  top_k: 0
+  top_p: 1.0
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+  eval_batch_size: 4
+
+evaluation:
+  compute_bertscore: false
+  bertscore_model_type: roberta-large

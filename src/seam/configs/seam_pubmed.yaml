@@ -1,0 +1,33 @@
+_base_: seam_base.yaml
+
+experiment:
+  name: seam_pubmed
+  output_dir: runs/seam/pubmed_full_memory_source_copy
+
+data:
+  train_file: datasets/pubmed/train.jsonl
+  validation_file: datasets/pubmed/validation.jsonl
+  test_file: datasets/pubmed/test.jsonl
+  encoder_prefix: "Summarize the following biomedical research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+  decoder_prompt: "Summarize the encoded biomedical article as a concise, factual abstract. Cover the objective, methods, key results, and conclusion when supported. Preserve numbers and the direction of findings. Output only the abstract."
+  decoder_prefix: "Abstract:\n"
+  detokenize: true
+
+generation:
+  max_new_tokens: 512
+  min_new_tokens: 32
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+
+model:
+  encoder_name: /absolute/path/to/pplx-embed-v1-0.6b
+  decoder_name: /absolute/path/to/Qwen3-0.6B
+
+training:
+  interface_warmup_epochs: 1
+  full_finetune_epochs: 3
+  batch_size: 48
+  gradient_accumulation_steps: 2
+  validation_batch_size: 4
+  max_grad_norm: 1.0
+  save_best: false

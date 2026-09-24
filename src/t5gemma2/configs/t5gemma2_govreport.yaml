@@ -1,0 +1,82 @@
+project:
+  name: t5gemma2_1b_1b_govreport_full_finetune_8192
+  task: summarization
+  output_dir: runs/t5gemma2_1b_1b_full_govreport_8192
+huggingface:
+  enabled: false
+  repo_id: null
+  repo_type: model
+  path_in_repo: null
+  push_final: false
+  push_eval_outputs: false
+  fail_on_error: false
+  private: false
+model:
+  model_name_or_path: google/t5gemma-2-1b-1b
+  trust_remote_code: true
+  torch_dtype: float32
+  eval_torch_dtype: bfloat16
+  use_cache_for_eval: true
+training:
+  mode: full_finetune
+  num_train_epochs: 2
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 6
+  learning_rate: 3.0e-05
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-08
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler_type: cosine
+  optim: adamw_torch_fused
+  bf16: true
+  fp16: false
+  require_fp32_master_weights: true
+  tf32: true
+  gradient_checkpointing: true
+  gradient_checkpointing_kwargs:
+    use_reentrant: false
+  group_by_length: true
+  dataloader_num_workers: 8
+  logging_steps: 10
+  eval_strategy: 'no'
+  seed: 42
+  ddp_find_unused_parameters: true
+  ddp_backend: nccl
+data:
+  train_file: src/seam/datasets/govreport/train.jsonl
+  eval_file: src/seam/datasets/govreport/validation.jsonl
+  validation_file: src/seam/datasets/govreport/validation.jsonl
+  test_file: src/seam/datasets/govreport/test.jsonl
+  source_field: text
+  target_field: summary
+  id_field: id
+  list_separator: '
+
+    '
+  detokenize: true
+  source_prefix: 'Summarize the following government report into a concise, factual summary. Preserve the main objectives, findings, evidence, and recommendations; do not add information.
+
+    Report:
+
+    '
+  max_source_length: 16384
+  max_target_length: 1024
+generation:
+  max_new_tokens: 1024
+  min_new_tokens: 32
+  num_beams: 1
+  do_sample: false
+  early_stopping: true
+  temperature: 0.0
+  top_k: 0
+  top_p: 1.0
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+  eval_batch_size: 8
+evaluation:
+  compute_bertscore: false
+  bertscore_model_type: roberta-large
