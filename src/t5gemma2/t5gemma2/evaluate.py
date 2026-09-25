@@ -230,7 +230,11 @@ def main() -> None:
     parser.add_argument("--no_repeat_ngram_size", type=int, default=None)
     parser.add_argument("--compute_bertscore", action="store_true")
     parser.add_argument("--bertscore_model_type", default=None)
+    parser.add_argument("--shard-rank", type=int, default=0)
+    parser.add_argument("--num-shards", type=int, default=1)
     args = parser.parse_args()
+    if args.num_shards < 1 or not 0 <= args.shard_rank < args.num_shards:
+        parser.error("--shard-rank must lie in [0, --num-shards) and --num-shards must be positive")
 
     project_root = T5GEMMA_ROOT.parents[1]
     config_path = resolve_path(args.config, base=project_root)
@@ -306,6 +310,7 @@ def main() -> None:
     )
 
     examples = load_summarization_jsonl(test_file, raw_cfg["data"], limit=args.limit)
+    selected_indices = list(range(args.shard_rank, len(examples), args.num_shards))
     batch_size = int(args.batch_size or raw_cfg.get("generation", {}).get("eval_batch_size", 1))
     generation_settings = {
         "max_new_tokens": int(generation_value(args, raw_cfg, "max_new_tokens", 256)),
@@ -349,8 +354,9 @@ def main() -> None:
         torch.cuda.reset_peak_memory_stats(device)
 
     with predictions_path.open("w", encoding="utf-8") as out_f:
-        for offset in tqdm(range(0, len(examples), batch_size), desc="Generating"):
-            batch = examples[offset : offset + batch_size]
+        for offset in tqdm(range(0, len(selected_indices), batch_size), desc="Generating"):
+            batch_indices = selected_indices[offset : offset + batch_size]
+            batch = [examples[index] for index in batch_indices]
             batch_sources = [row.source for row in batch]
             batch_refs = [row.target for row in batch]
             enc = tokenizer(
@@ -369,7 +375,9 @@ def main() -> None:
             batch_elapsed = time.perf_counter() - generation_start
 
             decoded = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-            for row, source, reference, prediction, ids in zip(batch, batch_sources, batch_refs, decoded, output_ids):
+            for index, row, source, reference, prediction, ids in zip(
+                batch_indices, batch, batch_sources, batch_refs, decoded, output_ids
+            ):
                 if tokenizer.pad_token_id is None:
                     new_tokens = int(ids.numel())
                 else:
@@ -390,6 +398,7 @@ def main() -> None:
                             "prediction": prediction,
                             "generated_tokens": new_tokens,
                             "latency_seconds": batch_elapsed / max(1, len(batch)),
+                            **({"index": index} if args.num_shards > 1 else {}),
                         },
                         ensure_ascii=False,
                     )
@@ -446,6 +455,9 @@ def main() -> None:
             "max_source_length": int(raw_cfg["data"]["max_source_length"]),
             "max_target_length": int(raw_cfg["data"]["max_target_length"]),
             "eval_batch_size": batch_size,
+            "shard_rank": args.shard_rank,
+            "num_shards": args.num_shards,
+            "test_examples_total": len(examples),
         }
     )
     with metrics_path.open("w", encoding="utf-8") as f:

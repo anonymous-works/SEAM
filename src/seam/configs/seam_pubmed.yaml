@@ -20,14 +20,14 @@ generation:
   no_repeat_ngram_size: 3
 
 model:
-  encoder_name: /absolute/path/to/pplx-embed-v1-0.6b
-  decoder_name: /absolute/path/to/Qwen3-0.6B
+  encoder_name: perplexity-ai/pplx-embed-v1-0.6b
+  decoder_name: Qwen/Qwen3-0.6B
 
 training:
-  interface_warmup_epochs: 1
+  interface_warmup_epochs: 0
   full_finetune_epochs: 3
-  batch_size: 48
-  gradient_accumulation_steps: 2
-  validation_batch_size: 4
+  batch_size: 84
+  gradient_accumulation_steps: 1
+  validation_batch_size: 84
   max_grad_norm: 1.0
   save_best: false

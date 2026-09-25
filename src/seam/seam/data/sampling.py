@@ -93,5 +93,16 @@ class DistributedBatchSampler(Sampler[list[int]]):
         local_batch_count = len(self)
         total_batch_count = local_batch_count * self.num_replicas
         if len(batches) < total_batch_count:
-            batches.extend(batches[index % len(batches)] for index in range(total_batch_count - len(batches)))
+            original_count = len(batches)
+            batches.extend(batches[index % original_count] for index in range(total_batch_count - original_count))
+        if self.shuffle and self.num_replicas > 1:
+            batches.sort(key=lambda batch: max(self.lengths[index] for index in batch) * len(batch))
+            step_groups = [
+                batches[start : start + self.num_replicas] for start in range(0, total_batch_count, self.num_replicas)
+            ]
+            rng = random.Random(self.seed + self.epoch)
+            for group in step_groups:
+                rng.shuffle(group)
+            rng.shuffle(step_groups)
+            batches = [batch for group in step_groups for batch in group]
         yield from batches[self.rank : total_batch_count : self.num_replicas]

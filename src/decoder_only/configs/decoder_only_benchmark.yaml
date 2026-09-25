@@ -3,12 +3,9 @@ output_root: "../../../runs/decoder_only"
 data_root: "../../seam/datasets"
 model_order:
   - qwen3_0_6b
-  - qwen3_8b
+  - qwen3_1_7b
   - qwen3_4b
-  - llama3_8b
   - llama3_3b
-  - nemotron_diffusion_8b
-  - nemotron_diffusion_3b
 dataset_order:
   - pubmed
   - arxiv
@@ -28,7 +25,7 @@ defaults:
     num_train_epochs: 4
     per_device_train_batch_size: 1
     gradient_accumulation_steps: 32
-    learning_rate: 1.0e-5
+    learning_rate: 3.0e-5
     adam_beta1: 0.9
     adam_beta2: 0.95
     adam_epsilon: 1.0e-8
@@ -70,68 +67,105 @@ models:
     path_env: QWEN3_0_6B_PATH
     local_dir: Qwen3-0.6B
     training:
-      per_device_train_batch_size: 4
-      gradient_accumulation_steps: 8
+      per_device_train_batch_size: 16
+      gradient_accumulation_steps: 2
+    training_by_dataset:
+      pubmed:
+        num_train_epochs: 3
+        per_device_train_batch_size: 32
+        gradient_accumulation_steps: 2
+      arxiv:
+        num_train_epochs: 2
+        per_device_train_batch_size: 24
+        gradient_accumulation_steps: 4
+      booksum:
+        num_train_epochs: 4
+        per_device_train_batch_size: 16
+        gradient_accumulation_steps: 4
+      govreport:
+        num_train_epochs: 3
+        per_device_train_batch_size: 16
+        gradient_accumulation_steps: 4
     generation:
-      batch_size: 8
-  qwen3_8b:
-    model_id: Qwen/Qwen3-8B
-    path_env: QWEN3_8B_PATH
-    local_dir: Qwen3-8B
+      batch_size: 64
+  qwen3_1_7b:
+    model_id: Qwen/Qwen3-1.7B
+    path_env: QWEN3_1_7B_PATH
+    local_dir: Qwen3-1.7B
     training:
-      per_device_train_batch_size: 1
-      gradient_accumulation_steps: 32
+      per_device_train_batch_size: 12
+      gradient_accumulation_steps: 4
+    training_by_dataset:
+      pubmed:
+        num_train_epochs: 3
+        per_device_train_batch_size: 16
+        gradient_accumulation_steps: 4
+      arxiv:
+        num_train_epochs: 2
+        per_device_train_batch_size: 12
+        gradient_accumulation_steps: 4
+      booksum:
+        num_train_epochs: 4
+        per_device_train_batch_size: 8
+        gradient_accumulation_steps: 6
+      govreport:
+        num_train_epochs: 3
+        per_device_train_batch_size: 8
+        gradient_accumulation_steps: 6
     generation:
-      batch_size: 2
+      batch_size: 32
   qwen3_4b:
     model_id: Qwen/Qwen3-4B
     path_env: QWEN3_4B_PATH
     local_dir: Qwen3-4B
     training:
-      per_device_train_batch_size: 2
-      gradient_accumulation_steps: 16
+      per_device_train_batch_size: 12
+      gradient_accumulation_steps: 4
+    training_by_dataset:
+      pubmed:
+        num_train_epochs: 3
+        per_device_train_batch_size: 12
+        gradient_accumulation_steps: 4
+      arxiv:
+        num_train_epochs: 2
+        per_device_train_batch_size: 8
+        gradient_accumulation_steps: 4
+      booksum:
+        num_train_epochs: 4
+        per_device_train_batch_size: 4
+        gradient_accumulation_steps: 8
+      govreport:
+        num_train_epochs: 3
+        per_device_train_batch_size: 4
+        gradient_accumulation_steps: 8
     generation:
-      batch_size: 4
-  llama3_8b:
-    model_id: meta-llama/Llama-3.1-8B
-    path_env: LLAMA3_8B_PATH
-    local_dir: Llama-3.1-8B
-    training:
-      per_device_train_batch_size: 1
-      gradient_accumulation_steps: 32
-    generation:
-      batch_size: 2
+      batch_size: 32
   llama3_3b:
     model_id: meta-llama/Llama-3.2-3B-Instruct
     path_env: LLAMA3_3B_PATH
     local_dir: Llama-3.2-3B-Instruct
     training:
-      per_device_train_batch_size: 4
-      gradient_accumulation_steps: 8
+      per_device_train_batch_size: 16
+      gradient_accumulation_steps: 4
+    training_by_dataset:
+      pubmed:
+        num_train_epochs: 3
+        per_device_train_batch_size: 16
+        gradient_accumulation_steps: 4
+      arxiv:
+        num_train_epochs: 2
+        per_device_train_batch_size: 12
+        gradient_accumulation_steps: 4
+      booksum:
+        num_train_epochs: 4
+        per_device_train_batch_size: 8
+        gradient_accumulation_steps: 6
+      govreport:
+        num_train_epochs: 3
+        per_device_train_batch_size: 8
+        gradient_accumulation_steps: 6
     generation:
-      batch_size: 4
-  nemotron_diffusion_8b:
-    model_id: nvidia/Nemotron-Labs-Diffusion-8B-Base
-    path_env: NEMOTRON_DIFFUSION_8B_PATH
-    local_dir: Nemotron-Labs-Diffusion-8B-Base
-    family: nemotron_diffusion
-    diffusion_paradigm: autoregressive
-    training:
-      per_device_train_batch_size: 1
-      gradient_accumulation_steps: 32
-    generation:
-      batch_size: 2
-  nemotron_diffusion_3b:
-    model_id: nvidia/Nemotron-Labs-Diffusion-3B
-    path_env: NEMOTRON_DIFFUSION_3B_PATH
-    local_dir: Nemotron-Labs-Diffusion-3B
-    family: nemotron_diffusion
-    diffusion_paradigm: autoregressive
-    training:
-      per_device_train_batch_size: 2
-      gradient_accumulation_steps: 16
-    generation:
-      batch_size: 4
+      batch_size: 32
 
 datasets:
   pubmed:
@@ -142,13 +176,10 @@ datasets:
     max_sequence_length: 8192
     generation:
       batch_size_by_model:
-        qwen3_0_6b: 8
-        qwen3_8b: 2
-        qwen3_4b: 4
-        llama3_8b: 2
-        llama3_3b: 4
-        nemotron_diffusion_8b: 2
-        nemotron_diffusion_3b: 4
+        qwen3_0_6b: 256
+        qwen3_1_7b: 256
+        qwen3_4b: 128
+        llama3_3b: 128
   arxiv:
     data_dir: arxiv
     source_prefix: "Summarize the following scientific research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
@@ -157,42 +188,33 @@ datasets:
     max_sequence_length: 9216
     generation:
       batch_size_by_model:
-        qwen3_0_6b: 4
-        qwen3_8b: 1
-        qwen3_4b: 2
-        llama3_8b: 1
-        llama3_3b: 2
-        nemotron_diffusion_8b: 1
-        nemotron_diffusion_3b: 2
+        qwen3_0_6b: 128
+        qwen3_1_7b: 128
+        qwen3_4b: 64
+        llama3_3b: 64
   booksum:
     data_dir: booksum
     source_prefix: "Summarize the following literary narrative into a coherent, faithful summary. Preserve the main characters, key events, causal and temporal relationships, and important outcomes; do not add information.\nNarrative:\n"
-    max_source_length: 16384
+    max_source_length: 12288
     max_target_length: 1024
-    max_sequence_length: 17408
+    max_sequence_length: 13312
     generation:
       max_new_tokens: 1024
       batch_size_by_model:
-        qwen3_0_6b: 2
-        qwen3_8b: 1
-        qwen3_4b: 1
-        llama3_8b: 1
-        llama3_3b: 1
-        nemotron_diffusion_8b: 1
-        nemotron_diffusion_3b: 1
+        qwen3_0_6b: 64
+        qwen3_1_7b: 64
+        qwen3_4b: 32
+        llama3_3b: 32
   govreport:
     data_dir: govreport
     source_prefix: "Summarize the following government report into a concise, factual summary. Preserve the main objectives, findings, evidence, and recommendations; do not add information.\nReport:\n"
-    max_source_length: 16384
+    max_source_length: 12288
     max_target_length: 1024
-    max_sequence_length: 17408
+    max_sequence_length: 13312
     generation:
       max_new_tokens: 1024
       batch_size_by_model:
-        qwen3_0_6b: 2
-        qwen3_8b: 1
-        qwen3_4b: 1
-        llama3_8b: 1
-        llama3_3b: 1
-        nemotron_diffusion_8b: 1
-        nemotron_diffusion_3b: 1
+        qwen3_0_6b: 64
+        qwen3_1_7b: 64
+        qwen3_4b: 32
+        llama3_3b: 32

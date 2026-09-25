@@ -23,9 +23,9 @@ model:
 training:
   mode: full_finetune
   num_train_epochs: 2
-  per_device_train_batch_size: 8
-  per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 6
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 64
+  gradient_accumulation_steps: 2
   learning_rate: 3.0e-5
   adam_beta1: 0.9
   adam_beta2: 0.95

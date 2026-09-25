@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import random
+import re
 import shutil
 import sys
 from datetime import timedelta
@@ -28,6 +29,7 @@ from transformers import (
 )
 
 T5GEMMA_ROOT = Path(__file__).resolve().parents[1]
+_HF_REPO_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 def load_env_file() -> None:
@@ -314,11 +316,14 @@ def main() -> None:
     with config_path.open("r", encoding="utf-8") as f:
         cfg: Dict[str, Any] = yaml.safe_load(f)
     assert_hf_uploads_disabled(cfg)
-    model_name = os.environ.get("T5GEMMA_MODEL_PATH", cfg["model"]["model_name_or_path"])
+    model_name = str(os.environ.get("T5GEMMA_MODEL_PATH", cfg["model"]["model_name_or_path"])).strip()
     model_path = resolve_path(model_name, base=project_root)
-    if not model_path.is_dir():
-        raise FileNotFoundError(f"Local T5Gemma model directory not found: {model_path}; set T5GEMMA_MODEL_PATH")
-    model_name = str(model_path)
+    if model_path.is_dir():
+        model_name = str(model_path)
+    elif _HF_REPO_ID.fullmatch(model_name) is None:
+        raise FileNotFoundError(
+            f"Model reference is neither a local directory nor a Hugging Face model ID: {model_name}"
+        )
     cfg["model"]["model_name_or_path"] = model_name
 
     if "lora" in cfg:

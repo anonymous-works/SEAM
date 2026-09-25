@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import copy
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 _TOP_LEVEL = {"run", "model", "data", "training", "generation", "limits"}
+_HF_REPO_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def is_hf_repo_id(value: str) -> bool:
+    return _HF_REPO_ID.fullmatch(value) is not None
 
 
 def _check_keys(mapping: dict[str, Any], allowed: set[str], section: str) -> None:

@@ -19,10 +19,10 @@ model:
   use_cache_for_eval: true
 training:
   mode: full_finetune
-  num_train_epochs: 2
-  per_device_train_batch_size: 8
-  per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 6
+  num_train_epochs: 3
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 64
+  gradient_accumulation_steps: 2
   learning_rate: 3.0e-05
   adam_beta1: 0.9
   adam_beta2: 0.95
@@ -42,7 +42,7 @@ training:
   group_by_length: true
   dataloader_num_workers: 8
   logging_steps: 10
-  eval_strategy: 'no'
+  eval_strategy: "no"
   seed: 42
   ddp_find_unused_parameters: true
   ddp_backend: nccl
@@ -54,16 +54,17 @@ data:
   source_field: text
   target_field: summary
   id_field: id
-  list_separator: '
+  list_separator: "
 
-    '
+    "
   detokenize: true
-  source_prefix: 'Summarize the following government report into a concise, factual summary. Preserve the main objectives, findings, evidence, and recommendations; do not add information.
+  source_prefix:
+    "Summarize the following government report into a concise, factual summary. Preserve the main objectives, findings, evidence, and recommendations; do not add information.
 
     Report:
 
-    '
-  max_source_length: 16384
+    "
+  max_source_length: 12288
   max_target_length: 1024
 generation:
   max_new_tokens: 1024

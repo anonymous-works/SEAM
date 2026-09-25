@@ -14,6 +14,8 @@ from typing import Any
 
 import yaml
 
+from .config import is_hf_repo_id
+
 _MODEL_NAME = re.compile(r"[^A-Za-z0-9_.-]+")
 _GPU_SPEC = re.compile(r"[0-9]+(?:,[0-9]+)*")
 
@@ -89,6 +91,9 @@ def _resolve_model(model_name: str, spec: dict[str, Any]) -> str:
     local_dir = str(spec.get("local_dir", "")).strip()
     if model_root and local_dir:
         return str((Path(model_root).expanduser() / local_dir).resolve())
+    model_id = str(spec.get("model_id", "")).strip()
+    if model_id:
+        return model_id
     if local_dir:
         return str(Path(local_dir).expanduser().resolve())
     raise ValueError(
@@ -160,7 +165,18 @@ def build_run_config(
             "test_file": str(data_dir / str(dataset_spec.get("test_file", "test.jsonl"))),
         }
     )
-    training = _merge(defaults.get("training", {}), model_spec.get("training", {}), dataset_spec.get("training", {}))
+    training_by_dataset = model_spec.get("training_by_dataset", {})
+    if not isinstance(training_by_dataset, dict):
+        raise ValueError(f"models.{model_name}.training_by_dataset must be a mapping")
+    dataset_training = training_by_dataset.get(dataset_name, {})
+    if not isinstance(dataset_training, dict):
+        raise ValueError(f"models.{model_name}.training_by_dataset.{dataset_name} must be a mapping")
+    training = _merge(
+        defaults.get("training", {}),
+        model_spec.get("training", {}),
+        dataset_spec.get("training", {}),
+        dataset_training,
+    )
     limits = {
         "max_train_examples": int(max_train_examples),
         "max_validation_examples": int(max_validation_examples),
@@ -195,14 +211,10 @@ def _data_preflight(config: dict[str, Any]) -> None:
 
 
 def _model_preflight(config: dict[str, Any]) -> None:
-    model_path = Path(config["model"]["name_or_path"]).expanduser()
-    if not model_path.is_dir():
-        model_id = config["model"].get("model_id", "unknown")
-        raise FileNotFoundError(
-            "Local model directory does not exist: "
-            f"{model_path}. Set the corresponding *_PATH variable (model_id={model_id}); "
-            "Hugging Face loading/downloads are disabled."
-        )
+    reference = str(config["model"]["name_or_path"])
+    if Path(reference).expanduser().is_dir() or is_hf_repo_id(reference):
+        return
+    raise FileNotFoundError(f"Model reference is neither a local directory nor a Hugging Face model ID: {reference}")
 
 
 def run_suite(args: argparse.Namespace) -> int:

@@ -13,7 +13,7 @@ from typing import Any
 import torch
 import yaml
 
-from .config import load_config
+from .config import is_hf_repo_id, load_config
 from .data import CausalCollator, CausalSummarizationDataset
 
 LOGGER = logging.getLogger("decoder_only.train")
@@ -132,12 +132,10 @@ def _load_tokenizer_and_model(config: dict[str, Any], *, evaluation: bool = Fals
     model_config = config["model"]
     name = str(model_config.get("name_or_path", model_config.get("model_id", "")))
     local_path = Path(name).expanduser().resolve()
-    if not local_path.is_dir():
-        raise FileNotFoundError(
-            "Local model directory does not exist: "
-            f"{local_path}. Set the model's *_PATH variable; Hugging Face IDs and downloads are disabled."
-        )
-    name = str(local_path)
+    if local_path.is_dir():
+        name = str(local_path)
+    elif not is_hf_repo_id(name):
+        raise FileNotFoundError(f"Model reference is neither a local directory nor a Hugging Face model ID: {name}")
     common = {
         "local_files_only": True,
         "trust_remote_code": bool(model_config.get("trust_remote_code", True)),

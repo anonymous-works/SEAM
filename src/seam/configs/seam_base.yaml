@@ -3,7 +3,7 @@ experiment:
   output_dir: runs/seam
 
 model:
-  encoder_name: Qwen/Qwen3-Embedding-0.6B
+  encoder_name: perplexity-ai/pplx-embed-v1-0.6b
   decoder_name: Qwen/Qwen3-0.6B
   dtype: float32
   compute_dtype: bfloat16

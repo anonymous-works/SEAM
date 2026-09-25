@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import json
 import logging
 import os
@@ -50,7 +51,10 @@ def _is_main_process() -> bool:
 
 def _barrier() -> None:
     if _distributed_active():
-        dist.barrier()
+        if dist.get_backend() == "nccl":
+            dist.barrier(device_ids=[torch.cuda.current_device()])
+        else:
+            dist.barrier()
 
 
 def _init_distributed(device: str | None) -> tuple[torch.device, bool]:
@@ -70,7 +74,10 @@ def _init_distributed(device: str | None) -> tuple[torch.device, bool]:
     torch.cuda.set_device(local_rank)
     initialized_here = False
     if not _distributed_active():
-        dist.init_process_group(backend="nccl", init_method="env://")
+        init_kwargs = {"backend": "nccl", "init_method": "env://"}
+        if "device_id" in inspect.signature(dist.init_process_group).parameters:
+            init_kwargs["device_id"] = torch.device("cuda", local_rank)
+        dist.init_process_group(**init_kwargs)
         initialized_here = True
     return torch.device("cuda", local_rank), initialized_here
 
@@ -305,7 +312,20 @@ def train(
             max_train_examples=max_train_examples,
             max_validation_examples=max_validation_examples,
         )
-        model = SEAMModel(config).to(device=selected_device, dtype=torch.float32)
+        rank = _distributed_rank()
+        serial_load = _distributed_active() and os.environ.get("SEAM_SERIAL_MODEL_LOAD", "0").lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+        model = None
+        for loading_rank in range(_distributed_world_size() if serial_load else 1):
+            if not serial_load or rank == loading_rank:
+                model = SEAMModel(config).to(device=selected_device, dtype=torch.float32)
+            if serial_load:
+                _barrier()
+        if model is None:
+            raise RuntimeError("Model construction did not run on this rank")
         counts = {
             name: sum(p.numel() for p in module.parameters())
             for name, module in (("encoder", model.encoder), ("bridge", model.bridge), ("decoder", model.decoder))

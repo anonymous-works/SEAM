@@ -11,13 +11,11 @@ data:
   source_field: text
   target_field: summary
   id_field: id
-  encoder_prefix: "Summarize the following literary narrative into a coherent, faithful summary. Preserve\
-  \ the main characters, key events, causal and temporal relationships, and important\
-  \ outcomes; do not add information.\nNarrative:\n"
-  decoder_prompt: "Summarize the following literary narrative into a coherent, faithful summary. Preserve the main characters, key events, causal and temporal relationships, and important outcomes; do not add information."
-  decoder_prefix: ""
+  encoder_prefix: "Summarize the following literary narrative into a coherent, faithful summary. Preserve the main characters, key events, causal and temporal relationships, and important outcomes; do not add information.\nNarrative:\n"
+  decoder_prompt: "Write a coherent, faithful summary of the encoded literary narrative. Preserve the main characters, key events, causal and temporal relationships, and important outcomes when supported. Do not add unsupported information. Output only the summary."
+  decoder_prefix: "Summary:\n"
   detokenize: true
-  max_source_length: 16384
+  max_source_length: 12288
   max_target_length: 1024
 
 generation:
@@ -33,15 +31,15 @@ generation:
   top_p: 1.0
 
 model:
-  encoder_name: /absolute/path/to/pplx-embed-v1-0.6b
-  decoder_name: /absolute/path/to/Qwen3-0.6B
+  encoder_name: perplexity-ai/pplx-embed-v1-0.6b
+  decoder_name: Qwen/Qwen3-0.6B
 
 training:
-  interface_warmup_epochs: 1
+  interface_warmup_epochs: 0
   full_finetune_epochs: 4
-  batch_size: 8
-  gradient_accumulation_steps: 12
-  validation_batch_size: 4
+  batch_size: 24
+  gradient_accumulation_steps: 2
+  validation_batch_size: 24
   num_workers: 8
   validation_num_workers: 2
   length_bucketing: true

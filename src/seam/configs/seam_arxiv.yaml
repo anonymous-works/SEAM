@@ -19,7 +19,7 @@ data:
   max_target_length: 512
 
 generation:
-  batch_size: 8
+  batch_size: 128
   max_new_tokens: 512
   min_new_tokens: 32
   repetition_penalty: 1.05
@@ -31,15 +31,15 @@ generation:
   top_p: 1.0
 
 model:
-  encoder_name: /absolute/path/to/pplx-embed-v1-0.6b
-  decoder_name: /absolute/path/to/Qwen3-0.6B
+  encoder_name: perplexity-ai/pplx-embed-v1-0.6b
+  decoder_name: Qwen/Qwen3-0.6B
 
 training:
-  interface_warmup_epochs: 1
-  full_finetune_epochs: 4
-  batch_size: 8
-  gradient_accumulation_steps: 12
-  validation_batch_size: 4
+  interface_warmup_epochs: 0
+  full_finetune_epochs: 2
+  batch_size: 64
+  gradient_accumulation_steps: 1
+  validation_batch_size: 64
   num_workers: 8
   validation_num_workers: 2
   length_bucketing: true
