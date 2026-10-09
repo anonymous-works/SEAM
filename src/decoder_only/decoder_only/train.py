@@ -190,6 +190,7 @@ def _training_arguments(config: dict[str, Any], output_dir: Path) -> Any:
         "output_dir": str(output_dir / "trainer_state"),
         "num_train_epochs": int(training["num_train_epochs"]),
         "per_device_train_batch_size": int(training["per_device_train_batch_size"]),
+        "per_device_eval_batch_size": int(training.get("per_device_eval_batch_size", 2)),
         "gradient_accumulation_steps": int(training["gradient_accumulation_steps"]),
         "learning_rate": float(training["learning_rate"]),
         "adam_beta1": float(training.get("adam_beta1", 0.9)),
@@ -206,8 +207,13 @@ def _training_arguments(config: dict[str, Any], output_dir: Path) -> Any:
         "gradient_checkpointing": bool(training.get("gradient_checkpointing", True)),
         "logging_steps": int(training.get("logging_steps", 10)),
         "logging_strategy": "steps",
-        "save_strategy": "no",
-        "eval_strategy": "no",
+        "save_strategy": "epoch",
+        "eval_strategy": "epoch",
+        "load_best_model_at_end": True,
+        "metric_for_best_model": "eval_loss",
+        "greater_is_better": False,
+        "save_total_limit": 2,
+        "prediction_loss_only": True,
         "report_to": [],
         "remove_unused_columns": False,
         "dataloader_num_workers": int(training.get("dataloader_num_workers", 4)),
@@ -226,7 +232,7 @@ def _training_arguments(config: dict[str, Any], output_dir: Path) -> Any:
     parameters = __import__("inspect").signature(TrainingArguments.__init__).parameters
     values = {key: value for key, value in values.items() if key in parameters}
     if "eval_strategy" not in parameters and "evaluation_strategy" in parameters:
-        values["evaluation_strategy"] = "no"
+        values["evaluation_strategy"] = "epoch"
     return TrainingArguments(**values)
 
 
@@ -307,11 +313,19 @@ def train(config_path: str | Path, *, overwrite_output_dir: bool = False) -> Pat
             max_examples=int(train_cfg.get("max_train_examples", 0)),
             model_context_length=context_length,
         )
+        validation_dataset = CausalSummarizationDataset(
+            config["data"]["validation_file"],
+            tokenizer,
+            config["data"],
+            max_examples=int(train_cfg.get("max_validation_examples", 0)),
+            model_context_length=context_length,
+        )
         collator = CausalCollator(tokenizer.pad_token_id)
         trainer_kwargs: dict[str, Any] = {
             "model": model,
             "args": training_args,
             "train_dataset": dataset,
+            "eval_dataset": validation_dataset,
             "data_collator": collator,
         }
         from transformers import Trainer
@@ -366,13 +380,16 @@ def train(config_path: str | Path, *, overwrite_output_dir: bool = False) -> Pat
             total_parameters,
         )
         result = trainer.train()
-        final_dir = output_dir / "final_model"
+        best_dir = output_dir / "best_model"
         if distributed.is_main:
-            final_dir.mkdir(parents=True, exist_ok=True)
-            model.config.use_cache = True
-            model.save_pretrained(final_dir, safe_serialization=True)
-            tokenizer.save_pretrained(final_dir)
+            if trainer.state.best_model_checkpoint is None or trainer.state.best_metric is None:
+                raise RuntimeError("Training finished without a validation-selected checkpoint")
+            best_dir.mkdir(parents=True, exist_ok=True)
+            trainer.model.config.use_cache = True
+            trainer.save_model(str(best_dir))
+            tokenizer.save_pretrained(best_dir)
             trainer.state.save_to_json(str(output_dir / "trainer_state.json"))
+            best_step = int(Path(trainer.state.best_model_checkpoint).name.rsplit("-", 1)[1])
             _write_json(
                 output_dir / "run_manifest.json",
                 {
@@ -381,6 +398,7 @@ def train(config_path: str | Path, *, overwrite_output_dir: bool = False) -> Pat
                     "model_path": config["model"].get("name_or_path"),
                     "dataset": config["data"].get("dataset", ""),
                     "num_train_examples": len(dataset),
+                    "num_validation_examples": len(validation_dataset),
                     "num_epochs": int(training["num_train_epochs"]),
                     "per_device_train_batch_size": int(training["per_device_train_batch_size"]),
                     "world_size": distributed.world_size,
@@ -390,6 +408,16 @@ def train(config_path: str | Path, *, overwrite_output_dir: bool = False) -> Pat
                     "gradient_accumulation_steps": int(training["gradient_accumulation_steps"]),
                     "trainable_parameter_elements": total_parameters,
                     "train_metrics": result.metrics,
+                    "selection": "minimum epoch-end eval_loss",
+                    "exported_checkpoint": "best_model",
+                    "best_checkpoint": trainer.state.best_model_checkpoint,
+                    "best_validation_loss": trainer.state.best_metric,
+                    "best_global_step": best_step,
+                    "best_epoch": next(
+                        (entry["epoch"] for entry in trainer.state.log_history
+                         if entry.get("step") == best_step and "eval_loss" in entry),
+                        None,
+                    ),
                     "elapsed_seconds": round(time.time() - started, 3),
                     "prompt_protocol": "t5gemma_source_prefix_plus_causal_target_masking",
                 },
@@ -400,7 +428,7 @@ def train(config_path: str | Path, *, overwrite_output_dir: bool = False) -> Pat
             LOGGER.info("completed run=%s elapsed_seconds=%.1f", config["run"]["name"], time.time() - started)
         else:
             _wait_for_path(output_dir / "COMPLETE")
-        return final_dir
+        return best_dir
     except Exception:
         LOGGER.exception("decoder-baseline run failed: %s", config["run"]["name"])
         raise

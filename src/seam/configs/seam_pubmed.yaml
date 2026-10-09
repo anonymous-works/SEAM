@@ -26,8 +26,8 @@ model:
 training:
   interface_warmup_epochs: 0
   full_finetune_epochs: 3
-  batch_size: 84
-  gradient_accumulation_steps: 1
+  batch_size: 24
+  gradient_accumulation_steps: 4
   validation_batch_size: 84
   max_grad_norm: 1.0
-  save_best: false
+  save_best: true

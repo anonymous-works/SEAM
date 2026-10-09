@@ -290,7 +290,7 @@ def run_suite(args: argparse.Namespace) -> int:
                         "--config",
                         str(config_path),
                         "--checkpoint",
-                        str(run_dir / "final_model"),
+                        str(run_dir / "best_model"),
                         "--output",
                         str(prediction_path),
                         "--split",

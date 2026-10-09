@@ -269,6 +269,8 @@ class SEAMTrainer:
         self._fit_start_global_step = self.global_step
         self._fit_started_at = time.monotonic()
         training = self.config["training"]
+        if training.get("save_best", False) and (validation_loader is None or len(validation_loader) == 0):
+            raise ValueError("Validation-best checkpoint selection requires a non-empty validation split")
         resume_scheduler = bool(training.get("resume_scheduler", True))
         stages = (
             ("interface_warmup", int(training["interface_warmup_epochs"])),
@@ -401,6 +403,19 @@ class SEAMTrainer:
                         stage_epoch=epoch,
                         elapsed_train_seconds=self._elapsed_train_seconds(),
                         scheduler=self.scheduler,
+                    )
+                    (Path(output_dir) / "checkpoint_manifest.json").write_text(
+                        json.dumps(
+                            {
+                                "selection": "minimum epoch-end validation loss",
+                                "checkpoint": "best.pt",
+                                "epoch": global_epoch,
+                                "global_step": self.global_step,
+                                "validation_loss": self.best_metric,
+                            },
+                            indent=2,
+                        ) + "\n",
+                        encoding="utf-8",
                     )
                 if self.is_main_process and bool(training.get("save_each_epoch", True)):
                     save_checkpoint(

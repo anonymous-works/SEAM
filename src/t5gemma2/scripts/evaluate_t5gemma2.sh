@@ -19,7 +19,7 @@ config = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
 print(config["project"]["output_dir"])
 PY
 )"
-CHECKPOINT_PATH="${CHECKPOINT_PATH:-${RUN_DIR}/final_model}"
+CHECKPOINT_PATH="${CHECKPOINT_PATH:-${RUN_DIR}/best_model}"
 EVAL_DIR="${EVAL_DIR:-${RUN_DIR}/eval_outputs}"
 LOG_DIR="${LOG_DIR:-runs/t5gemma2/logs}"
 mkdir -p "${LOG_DIR}"

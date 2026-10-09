@@ -35,7 +35,8 @@ PY
       "$PYTHON_BIN" -m seam.cli train "$CONFIG"
     fi
     PRED="$RUN_DIR/test_predictions.jsonl"
-    CUDA_VISIBLE_DEVICES="${GPUS[0]}" "$PYTHON_BIN" -m seam.cli evaluate "$RUN_DIR/resolved_config.yaml" "$RUN_DIR/last.pt" "$PRED" --split test
+    [[ -f "$RUN_DIR/best.pt" ]] || { echo "Missing validation-best checkpoint: $RUN_DIR/best.pt" >&2; exit 1; }
+    CUDA_VISIBLE_DEVICES="${GPUS[0]}" "$PYTHON_BIN" -m seam.cli evaluate "$RUN_DIR/resolved_config.yaml" "$RUN_DIR/best.pt" "$PRED" --split test
     ;;
   t5gemma2)
     CONFIG="${3:-src/t5gemma2/configs/t5gemma2_${DATASET}.yaml}"

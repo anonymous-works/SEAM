@@ -183,7 +183,7 @@ datasets:
   arxiv:
     data_dir: arxiv
     source_prefix: "Summarize the following scientific research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
-    max_source_length: 8096
+    max_source_length: 8192
     max_target_length: 512
     max_sequence_length: 9216
     generation:

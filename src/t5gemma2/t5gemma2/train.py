@@ -218,7 +218,12 @@ def make_training_arguments(cfg: Dict[str, Any], output_dir: Path) -> Seq2SeqTra
         "gradient_checkpointing": bool(train_cfg.get("gradient_checkpointing", True)),
         "logging_steps": int(train_cfg.get("logging_steps", 10)),
         "logging_strategy": "steps",
-        "save_strategy": "no",
+        "save_strategy": "epoch",
+        "load_best_model_at_end": True,
+        "metric_for_best_model": "eval_loss",
+        "greater_is_better": False,
+        "save_total_limit": 2,
+        "prediction_loss_only": True,
         "save_safetensors": True,
         "report_to": [],
         "predict_with_generate": False,
@@ -241,7 +246,9 @@ def make_training_arguments(cfg: Dict[str, Any], output_dir: Path) -> Seq2SeqTra
             checkpointing_kwargs = train_cfg.get("gradient_checkpointing_kwargs", {"use_reentrant": False})
             valid_kwargs["gradient_checkpointing_kwargs"] = dict(checkpointing_kwargs)
 
-    eval_strat = str(train_cfg.get("eval_strategy", "no"))
+    eval_strat = str(train_cfg.get("eval_strategy", "epoch"))
+    if eval_strat != "epoch":
+        raise ValueError("The reported protocol requires epoch-end validation")
     if "eval_strategy" in params:
         valid_kwargs["eval_strategy"] = eval_strat
     else:
@@ -376,6 +383,8 @@ def main() -> None:
     train_file = resolve_path(cfg["data"]["train_file"], base=project_root)
     eval_file_str = cfg["data"].get("eval_file") or cfg["data"].get("validation_file")
     eval_file = resolve_path(eval_file_str, base=project_root) if eval_file_str else None
+    if eval_file is None:
+        raise ValueError("Validation-best checkpoint selection requires data.eval_file or data.validation_file")
     if not train_file.exists():
         raise FileNotFoundError(train_file)
     if eval_file and not eval_file.exists():
@@ -479,17 +488,28 @@ def main() -> None:
     if main_process:
         logging.info("Training complete: %s", train_result.metrics)
 
-        final_folder = output_dir / "final_model"
-        final_folder.mkdir(parents=True, exist_ok=True)
-        trainer.save_model(str(final_folder))
-        tokenizer.save_pretrained(final_folder)
-        save_resolved_config(cfg, final_folder)
+        if trainer.state.best_model_checkpoint is None or trainer.state.best_metric is None:
+            raise RuntimeError("Training finished without a validation-selected checkpoint")
+        best_folder = output_dir / "best_model"
+        best_folder.mkdir(parents=True, exist_ok=True)
+        trainer.save_model(str(best_folder))
+        tokenizer.save_pretrained(best_folder)
+        save_resolved_config(cfg, best_folder)
+        best_step = int(Path(trainer.state.best_model_checkpoint).name.rsplit("-", 1)[1])
         write_json(
-            final_folder / "checkpoint_manifest.json",
+            best_folder / "checkpoint_manifest.json",
             {
-                "tag": "final",
-                "global_step": int(trainer.state.global_step),
-                "epoch": float(trainer.state.epoch or 0.0),
+                "tag": "validation_best",
+                "selection": "minimum epoch-end eval_loss",
+                "best_checkpoint": trainer.state.best_model_checkpoint,
+                "best_validation_loss": trainer.state.best_metric,
+                "global_step": best_step,
+                "epoch": next(
+                    (entry["epoch"] for entry in trainer.state.log_history
+                     if entry.get("step") == best_step and "eval_loss" in entry),
+                    None,
+                ),
+                "training_global_step": int(trainer.state.global_step),
                 "base_model": model_name,
                 "stores_base_model_weights": True,
                 "checkpoint_type": "full_finetuned_seq2seq_model",

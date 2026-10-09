@@ -127,6 +127,7 @@ def validate_config(config: dict[str, Any]) -> None:
         {
             "num_train_epochs",
             "per_device_train_batch_size",
+            "per_device_eval_batch_size",
             "gradient_accumulation_steps",
             "learning_rate",
             "adam_beta1",

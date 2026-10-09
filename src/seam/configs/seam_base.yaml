@@ -47,10 +47,10 @@ decoder:
     gate_init: 0.05
 
 training:
-  interface_warmup_epochs: 1
+  interface_warmup_epochs: 0
   full_finetune_epochs: 4
   batch_size: 4
-  gradient_accumulation_steps: 8
+  gradient_accumulation_steps: 24
   validation_batch_size: 4
   num_workers: 8
   persistent_workers: true
@@ -70,7 +70,7 @@ training:
   seed: 42
   log_every_steps: 10
   save_each_epoch: true
-  save_best: false
+  save_best: true
   resume_checkpoint: ""
   resume_scheduler: true
 
@@ -94,7 +94,7 @@ generation:
   compact_finished: true
   batch_size: 96
   max_new_tokens: 512
-  min_new_tokens: 16
+  min_new_tokens: 32
   repetition_penalty: 1.05
   no_repeat_ngram_size: 3
   num_beams: 1

@@ -193,7 +193,7 @@ def resolve_checkpoint_source(
 
         raise FileNotFoundError(f"Full checkpoint not found: {checkpoint}")
     output_dir = resolve_path(raw_cfg["project"]["output_dir"], base=base or T5GEMMA_ROOT.parents[1])
-    local_candidates.append(output_dir / "final_model")
+    local_candidates.append(output_dir / "best_model")
     for path in local_candidates:
         if path.exists():
             return str(path), None, str(path)
