@@ -49,7 +49,7 @@ datasets:
     id_field: id
     list_separator: "\n"
     detokenize: true
-    source_prefix: "Summarize the following biomedical research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+    source_prefix: ""
     max_source_length: 4096
     max_target_length: 512
   arxiv:
@@ -61,7 +61,7 @@ datasets:
     id_field: id
     list_separator: "\n"
     detokenize: true
-    source_prefix: "Summarize the following scientific research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+    source_prefix: ""
     max_source_length: 8192
     max_target_length: 512
   booksum:
@@ -73,7 +73,7 @@ datasets:
     id_field: id
     list_separator: "\n\n"
     detokenize: true
-    source_prefix: "Summarize the following literary narrative into a coherent, faithful summary. Preserve the main characters, key events, causal and temporal relationships, and important outcomes; do not add information.\nNarrative:\n"
+    source_prefix: ""
     max_source_length: 12288
     max_target_length: 1024
   govreport:
@@ -85,6 +85,6 @@ datasets:
     id_field: id
     list_separator: "\n\n"
     detokenize: true
-    source_prefix: "Summarize the following government report into a concise, factual summary. Preserve the main objectives, findings, evidence, and recommendations; do not add information.\nReport:\n"
+    source_prefix: ""
     max_source_length: 12288
     max_target_length: 1024

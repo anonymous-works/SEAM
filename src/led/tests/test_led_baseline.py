@@ -18,6 +18,7 @@ from led.evaluate import _first_token_global_mask
 )
 def test_dataset_limits_and_effective_batch(dataset: str, source_limit: int, target_limit: int) -> None:
     config = load_config(dataset, num_train_epochs=1)
+    assert config["data"]["source_prefix"] == ""
     assert config["data"]["max_source_length"] == source_limit
     assert config["data"]["max_target_length"] == target_limit
     assert config["generation"]["max_new_tokens"] == target_limit
