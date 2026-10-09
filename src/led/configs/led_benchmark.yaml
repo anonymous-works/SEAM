@@ -1,0 +1,90 @@
+output_root: runs/led
+
+model:
+  model_id: allenai/led-large-16384
+  local_files_only: true
+  trust_remote_code: false
+  torch_dtype: bfloat16
+  max_position_embeddings: 16384
+  use_cache_for_eval: true
+
+training:
+  effective_batch_size: 96
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 96
+  per_device_eval_batch_size: 1
+  learning_rate: 3.0e-5
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+  lr_scheduler_type: cosine
+  optim: adamw_torch_fused
+  bf16: true
+  fp16: false
+  tf32: true
+  gradient_checkpointing: true
+  dataloader_num_workers: 4
+  logging_steps: 10
+  seed: 42
+
+generation:
+  batch_size: 1
+  max_new_tokens: 512
+  min_new_tokens: 32
+  num_beams: 1
+  do_sample: false
+  repetition_penalty: 1.05
+  no_repeat_ngram_size: 3
+
+datasets:
+  pubmed:
+    train_file: src/seam/datasets/pubmed/train.jsonl
+    validation_file: src/seam/datasets/pubmed/validation.jsonl
+    test_file: src/seam/datasets/pubmed/test.jsonl
+    source_field: text
+    target_field: summary
+    id_field: id
+    list_separator: "\n"
+    detokenize: true
+    source_prefix: "Summarize the following biomedical research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+    max_source_length: 4096
+    max_target_length: 512
+  arxiv:
+    train_file: src/seam/datasets/arxiv/train.jsonl
+    validation_file: src/seam/datasets/arxiv/validation.jsonl
+    test_file: src/seam/datasets/arxiv/test.jsonl
+    source_field: text
+    target_field: summary
+    id_field: id
+    list_separator: "\n"
+    detokenize: true
+    source_prefix: "Summarize the following scientific research article into a concise, factual abstract. Preserve the key objective, methods, results, and conclusion; do not add information.\nArticle:\n"
+    max_source_length: 8192
+    max_target_length: 512
+  booksum:
+    train_file: src/seam/datasets/booksum/train.jsonl
+    validation_file: src/seam/datasets/booksum/validation.jsonl
+    test_file: src/seam/datasets/booksum/test.jsonl
+    source_field: text
+    target_field: summary
+    id_field: id
+    list_separator: "\n\n"
+    detokenize: true
+    source_prefix: "Summarize the following literary narrative into a coherent, faithful summary. Preserve the main characters, key events, causal and temporal relationships, and important outcomes; do not add information.\nNarrative:\n"
+    max_source_length: 12288
+    max_target_length: 1024
+  govreport:
+    train_file: src/seam/datasets/govreport/train.jsonl
+    validation_file: src/seam/datasets/govreport/validation.jsonl
+    test_file: src/seam/datasets/govreport/test.jsonl
+    source_field: text
+    target_field: summary
+    id_field: id
+    list_separator: "\n\n"
+    detokenize: true
+    source_prefix: "Summarize the following government report into a concise, factual summary. Preserve the main objectives, findings, evidence, and recommendations; do not add information.\nReport:\n"
+    max_source_length: 12288
+    max_target_length: 1024

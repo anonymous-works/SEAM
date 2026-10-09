@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seam-summarization"
+version = "1.0.0"
+description = "SEAM: Separate Encoder-Decoder Assembly Module for source-grounded summarization"
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.6",
+  "transformers>=5.2,<6",
+  "accelerate>=1.2",
+  "safetensors>=0.4",
+  "pyyaml>=6.0",
+  "numpy>=1.24",
+  "rouge==1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff==0.15.20"]
+baselines = ["sacrebleu>=2.4", "tqdm>=4.66", "sentencepiece>=0.2", "protobuf>=4.25"]
+evaluation = ["bert-score>=0.3.13", "pyrouge>=0.1.3"]
+
+[project.scripts]
+seam = "seam.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src/seam", "decoder_only" = "src/decoder_only/decoder_only", "t5gemma2" = "src/t5gemma2/t5gemma2", "led" = "src/led/led"}
+packages = ["seam", "seam.data", "seam.evaluation", "seam.modeling", "seam.training", "decoder_only", "t5gemma2", "led"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local environments and credentials
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Data, checkpoints, and experiment outputs
+data/raw/
+data/processed/
+src/seam/datasets/
+models/
+checkpoints/
+runs/
+outputs/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+
+# Packaging artifacts
+build/
+dist/
+*.egg-info/

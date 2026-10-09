@@ -1,0 +1,8 @@
+torch>=2.6
+transformers>=5.2,<6
+accelerate>=1.2
+safetensors>=0.4
+pyyaml>=6.0
+numpy>=1.24
+rouge==1.0.0
+pytest>=8.0
